@@ -1,0 +1,13 @@
+# Dependências do Projeto de Análise de Dados e Previsão da Qualidade de Vinhos
+
+# Manipulação e Processamento de Dados
+pandas e numpy
+
+# Visualização de Dados
+matplotlib e seaborn
+
+# Aprendizado de Máquina e Modelagem Estatística
+scikit-learn, xgboost, Random Forest e KNN (K-Nearest Neighbors)
+
+# Ambiente de Desenvolvimento
+jupyter notebook, VS Code e Google Colab

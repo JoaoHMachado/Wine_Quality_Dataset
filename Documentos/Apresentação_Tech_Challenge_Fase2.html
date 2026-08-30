@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qualidade de Vinhos · Apresentação Executiva</title>
+<style>
+  :root{
+    --ink:#2a1520; --ink-2:#4a2436;
+    --wine:#8b1a3a; --wine-soft:#c2647f;
+    --gold:#c08a1e; --gold-soft:#e0b64b;
+    --green:#1f9d55; --red:#cf3b3b;
+    --bg:#ffffff; --panel:#f4eef0; --panel-2:#ece2e6;
+    --body:#3a2b32; --muted:#8a7680; --line:#e4d7dc;
+    --xs:8px; --sm:16px; --md:24px; --lg:40px; --xl:60px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;width:100%;overflow:hidden;background:#1a0d14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;}
+  #progress{position:fixed;top:0;left:0;height:3px;z-index:100;
+    background:linear-gradient(to right,var(--wine),var(--gold));transition:width .3s ease;width:0;}
+  .deck{position:relative;width:100vw;height:100vh;}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;width:100%;height:100%;overflow:hidden;}
+  .slide.active{display:flex;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .slide.active .animate-child{opacity:0;transform:translateY(16px);animation:slideIn .45s ease forwards;}
+  .slide.active .animate-child:nth-child(1){animation-delay:.08s;}
+  .slide.active .animate-child:nth-child(2){animation-delay:.16s;}
+  .slide.active .animate-child:nth-child(3){animation-delay:.24s;}
+  .slide.active .animate-child:nth-child(4){animation-delay:.32s;}
+  .slide.active .animate-child:nth-child(5){animation-delay:.40s;}
+  .slide.active .animate-child:nth-child(6){animation-delay:.48s;}
+  .slide.active .animate-child:nth-child(7){animation-delay:.56s;}
+
+  .idx{width:30px;height:30px;border-radius:50%;background:var(--wine);color:#fff;
+    font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .dark{background:radial-gradient(120% 120% at 80% -10%, #4a2436 0%, #2a1520 55%, #1a0d14 100%);
+    align-items:center;justify-content:center;text-align:center;padding:var(--xl) var(--lg) 68px;}
+  .dark .kicker{color:var(--gold-soft);font-size:13px;font-weight:700;letter-spacing:3px;
+    text-transform:uppercase;margin-bottom:var(--md);}
+  .dark h1{color:#fff;font-size:46px;font-weight:800;line-height:1.12;letter-spacing:-.02em;max-width:1000px;
+    font-family:'Cambria','Georgia',serif;}
+  .dark .subtitle{color:var(--wine-soft);font-size:20px;font-weight:400;line-height:1.5;margin-top:var(--md);max-width:840px;}
+  .dark .meta{color:rgba(255,255,255,.55);font-size:13.5px;margin-top:var(--lg);letter-spacing:1.5px;}
+
+  .light{background:var(--bg);padding:46px var(--lg) 68px;}
+  .topbar{display:flex;align-items:center;gap:14px;}
+  .tag{color:var(--wine);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .light h2{color:var(--ink);font-size:27px;font-weight:700;line-height:1.2;letter-spacing:-.01em;
+    margin-top:8px;font-family:'Cambria','Georgia',serif;}
+  .content{margin-top:18px;flex:1;display:flex;flex-direction:column;min-height:0;}
+  .light p{color:var(--body);font-size:14px;line-height:1.6;}
+  .light p.lead{font-size:15px;}
+
+  .chart-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .chart-wrap svg{width:100%;height:100%;flex:1;min-height:0;}
+  .ctitle{font-size:14px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:4px;}
+
+  .split{display:grid;grid-template-columns:1.55fr 1fr;gap:28px;flex:1;min-height:0;align-items:center;}
+  .split.even{grid-template-columns:1fr 1fr;}
+  .takeaways{display:flex;flex-direction:column;gap:12px;}
+  .ta{background:var(--panel);border-radius:10px;padding:14px 16px;}
+  .ta .k{font-size:24px;font-weight:800;color:var(--wine);line-height:1;}
+  .ta .k.gold{color:var(--gold);} .ta .k.ink{color:var(--ink);}
+  .ta .k.green{color:var(--green);} .ta .k.red{color:var(--red);}
+  .ta .t{font-size:12.5px;color:var(--body);line-height:1.4;margin-top:6px;}
+
+  .grid-line{stroke:var(--line);stroke-width:1;}
+  .axis-line{stroke:#cbb9c0;stroke-width:1;}
+  .axis-text{fill:var(--muted);font-size:11px;}
+  .axis-title{fill:var(--ink);font-size:11.5px;font-weight:700;}
+  .bar{transition:opacity .15s;cursor:pointer;}
+  .bar:hover{opacity:.78;}
+  .bar-val{fill:var(--ink);font-size:11px;font-weight:700;}
+  .pt{cursor:pointer;}
+  .legend-text{fill:var(--body);font-size:12px;font-weight:600;}
+
+  #tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;
+    padding:7px 11px;border-radius:7px;opacity:0;transition:opacity .12s;z-index:200;white-space:nowrap;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);line-height:1.4;}
+  #tip b{color:var(--gold-soft);}
+
+  .gq-hero{background:var(--ink);border-radius:14px;padding:24px 34px;color:#fff;position:relative;overflow:hidden;}
+  .gq-hero::before{content:'?';position:absolute;right:24px;top:-26px;font-size:170px;font-weight:800;
+    color:rgba(255,255,255,.06);font-family:'Cambria','Georgia',serif;line-height:1;}
+  .gq-hero .lbl{color:var(--gold-soft);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .gq-hero .q{font-size:24px;font-weight:700;line-height:1.35;margin-top:12px;font-family:'Cambria','Georgia',serif;max-width:860px;}
+  .gq-hero .q em{color:var(--gold-soft);font-style:normal;}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .pillar{background:var(--panel);border-radius:12px;padding:20px 20px 18px;border-top:3px solid var(--wine);}
+  .pillar.force{border-top-color:var(--green);}
+  .pillar.risk{border-top-color:var(--red);}
+  .pillar.opp{border-top-color:var(--gold);}
+  .pillar .pic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:800;color:#fff;margin-bottom:12px;}
+  .pillar.force .pic{background:var(--green);}
+  .pillar.risk .pic{background:var(--red);}
+  .pillar.opp .pic{background:var(--gold);}
+  .pillar .ph{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px;}
+  .pillar .pdesc{font-size:13px;line-height:1.5;color:var(--body);}
+
+  .rcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .rcard{background:var(--panel);border-radius:12px;padding:0 0 16px;overflow:hidden;
+    border-top:4px solid var(--wine);display:flex;flex-direction:column;}
+  .rcard .rc-head{padding:14px 18px 10px;display:flex;align-items:center;gap:10px;}
+  .rcard .rc-n{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;
+    font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .rcard .rc-title{font-size:14.5px;font-weight:800;color:var(--ink);line-height:1.15;}
+  .rcard .rc-risk{padding:0 18px 12px;font-size:12.5px;line-height:1.5;color:var(--body);}
+  .rcard .rc-action{margin:0 14px;padding:11px 14px;background:#fff;border-radius:8px;border-left:3px solid var(--wine);}
+  .rcard .rc-action .lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--wine);margin-bottom:4px;}
+  .rcard .rc-action .txt{font-size:12.5px;line-height:1.5;color:var(--ink);}
+  .rcard.c1{border-top-color:#8b1a3a;} .rcard.c1 .rc-action{border-left-color:#8b1a3a;} .rcard.c1 .rc-action .lbl{color:#8b1a3a;}
+  .rcard.c2{border-top-color:var(--gold);} .rcard.c2 .rc-action{border-left-color:var(--gold);} .rcard.c2 .rc-action .lbl{color:var(--gold);}
+  .rcard.c3{border-top-color:var(--green);} .rcard.c3 .rc-action{border-left-color:var(--green);} .rcard.c3 .rc-action .lbl{color:var(--green);}
+  .rcard.c4{border-top-color:var(--ink-2);} .rcard.c4 .rc-action{border-left-color:var(--ink-2);} .rcard.c4 .rc-action .lbl{color:var(--ink-2);}
+
+  .note{font-size:11.5px;color:var(--muted);font-style:italic;margin-top:8px;}
+  .pagenum{position:absolute;bottom:16px;right:var(--lg);font-size:11px;letter-spacing:1px;color:var(--muted);}
+  .dark .pagenum{color:rgba(255,255,255,.4);}
+
+  /* tabela de métricas */
+  .mtable{width:100%;border-collapse:collapse;font-size:13px;}
+  .mtable th{background:var(--ink);color:#fff;padding:10px 12px;text-align:left;font-size:11.5px;
+    font-weight:700;letter-spacing:.5px;}
+  .mtable th:not(:first-child){text-align:center;}
+  .mtable td{padding:10px 12px;border-bottom:1px solid var(--line);}
+  .mtable td:not(:first-child){text-align:center;font-variant-numeric:tabular-nums;}
+  .mtable tr.best{background:rgba(139,26,58,.07);}
+  .mtable tr.base{background:#faf7f8;color:var(--muted);}
+  .mtable tr.base td{color:var(--muted);}
+  .mtable .mname{font-weight:700;color:var(--ink);}
+  .mtable .hi{font-weight:800;color:var(--wine);}
+  .mtable .badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;
+    background:var(--wine);color:#fff;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;}
+
+  /* matriz de confusão */
+  .cms{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  .cm{background:var(--panel);border-radius:12px;padding:16px 18px 18px;}
+  .cm .cmt{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:12px;text-align:center;}
+  .cmgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .cmc{border-radius:8px;padding:12px 8px;text-align:center;color:#fff;}
+  .cmc .v{font-size:22px;font-weight:800;line-height:1;}
+  .cmc .l{font-size:10px;margin-top:5px;line-height:1.25;opacity:.92;}
+  .cmc.tn{background:#4a2436;} .cmc.fp{background:var(--gold);}
+  .cmc.fn{background:var(--red);} .cmc.tp{background:var(--green);}
+  .cmnote{font-size:11.5px;color:var(--body);margin-top:11px;line-height:1.45;text-align:center;}
+
+  /* comparativo de modelos (escolha) */
+  .choice{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  .ch{background:var(--panel);border-radius:12px;padding:20px 22px;border-top:4px solid var(--wine);}
+  .ch.alt{border-top-color:var(--gold);}
+  .ch .chh{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+  .ch .chn{font-size:19px;font-weight:800;color:var(--ink);}
+  .ch .chm{font-size:12px;font-weight:700;color:var(--wine);}
+  .ch.alt .chm{color:var(--gold);}
+  .ch .chq{font-size:13px;color:var(--body);line-height:1.55;margin-top:10px;}
+  .ch .chq b{color:var(--ink);}
+  .ch .chwhen{margin-top:12px;padding:10px 13px;background:#fff;border-radius:8px;
+    border-left:3px solid var(--wine);font-size:12.5px;line-height:1.5;color:var(--ink);}
+  .ch.alt .chwhen{border-left-color:var(--gold);}
+  .ch .chwhen .lbl{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:var(--wine);margin-bottom:3px;}
+  .ch.alt .chwhen .lbl{color:var(--gold);}
+
+  #nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;
+    display:flex;align-items:center;gap:16px;}
+  #nav button{background:var(--panel);color:var(--body);border:none;padding:8px 20px;border-radius:6px;
+    font-size:14px;cursor:pointer;transition:all .2s;font-family:inherit;}
+  #nav button:hover{background:var(--wine);color:#fff;}
+  #counter{color:var(--muted);font-size:14px;min-width:54px;text-align:center;}
+  .dark-context #counter{color:rgba(255,255,255,.7);}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="tip"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. CAPA -->
+  <section class="slide dark active">
+    <p class="kicker animate-child">Tech Challenge · Fase 2 · Apresentação Executiva</p>
+    <h1 class="animate-child">Classificando a qualidade de vinhos<br>com Machine Learning</h1>
+    <p class="subtitle animate-child">Como transformar medidas de produção em uma ferramenta objetiva de triagem de qualidade, reduzindo a dependência do julgamento sensorial.</p>
+    <p class="meta animate-child">PÓS-GRADUAÇÃO EM DATA ANALYTICS · FIAP · POSTECH DTAT</p>
+  </section>
+
+  <!-- 2. PERGUNTA NORTEADORA -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">01</div><span class="tag">Pergunta Norteadora</span></div>
+    <h2 class="animate-child">A pergunta que orienta toda a análise</h2>
+    <div class="content">
+      <div class="gq-hero animate-child">
+        <div class="lbl">Pergunta norteadora</div>
+        <div class="q">"É possível prever se um vinho é de <em>alta qualidade</em> apenas com suas <em>medidas de produção</em>, com a confiabilidade de um especialista?"</div>
+      </div>
+      <p class="animate-child" style="color:var(--muted);font-size:13px;margin:14px 0 4px;font-style:italic;">Em outras palavras: quais características físico-químicas determinam a percepção de qualidade e podem ser usadas para automatizar a triagem?</p>
+      <p class="animate-child" style="font-weight:700;color:var(--ink);font-size:13px;margin:16px 0 10px;">Os três eixos que a análise investiga</p>
+      <div class="pillars animate-child">
+        <div class="pillar force">
+          <div class="pic">↑</div>
+          <div class="ph">O que determina</div>
+          <div class="pdesc">Teor alcoólico, sulfatos e acidez volátil explicam boa parte da nota final.</div>
+        </div>
+        <div class="pillar risk">
+          <div class="pic">!</div>
+          <div class="ph">O que dificulta</div>
+          <div class="pdesc">Só 14% dos vinhos são premium: a raridade torna a previsão desafiadora.</div>
+        </div>
+        <div class="pillar opp">
+          <div class="pic">◎</div>
+          <div class="ph">Onde aplicar</div>
+          <div class="pdesc">Triagem de lotes, ajuste de processo e apoio à decisão do enólogo.</div>
+        </div>
+      </div>
+      <p class="note animate-child">Cada gráfico a seguir investiga um desses eixos, dos dados brutos à escolha do modelo final.</p>
+    </div>
+    <div class="pagenum">2 / 12</div>
+  </section>
+
+  <!-- 3. OBJETIVO & CONTEXTO -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">02</div><span class="tag">Objetivo &amp; Contexto</span></div>
+    <h2 class="animate-child">Por que esta análise importa</h2>
+    <div class="content">
+      <p class="lead animate-child" style="margin-bottom:18px;">A avaliação de vinhos depende de painéis de especialistas: um processo eficaz, mas subjetivo, caro e lento. Medidas físico-químicas coletadas durante a produção são objetivas e imediatas. A análise testa se elas podem apoiar essa decisão com precisão suficiente para uso operacional.</p>
+      <div class="takeaways animate-child" style="flex-direction:row;gap:20px;">
+        <div class="ta" style="flex:1;"><div class="k">1.143</div><div class="t">amostras de vinho tinto analisadas, sem dados faltantes ou duplicados</div></div>
+        <div class="ta" style="flex:1;"><div class="k ink">11</div><div class="t">variáveis físico-químicas medidas durante a produção</div></div>
+        <div class="ta" style="flex:1;"><div class="k gold">13,9%</div><div class="t">apenas dos vinhos são classificados como alta qualidade</div></div>
+        <div class="ta" style="flex:1;"><div class="k ink">3</div><div class="t">modelos treinados e comparados na mesma régua</div></div>
+      </div>
+      <p class="note animate-child">Base: Wine Quality Dataset (WineQT). A nota original do especialista (0 a 10) foi mantida, e uma coluna binária foi criada em paralelo: alta qualidade (nota ≥ 7) contra baixa/média (nota &lt; 7).</p>
+    </div>
+    <div class="pagenum">3 / 12</div>
+  </section>
+
+  <!-- 4. DISTRIBUIÇÃO DAS NOTAS -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">03</div><span class="tag">Análise Exploratória</span></div>
+    <h2 class="animate-child">A maioria dos vinhos fica na média</h2>
+    <div class="content">
+      <div class="split">
+        <div class="chart-wrap animate-child">
+          <div class="ctitle">Distribuição das Notas de Qualidade — 1.143 amostras</div>
+          <svg id="chartQuality" viewBox="0 0 720 430" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="takeaways animate-child">
+          <div class="ta"><div class="k ink">83%</div><div class="t">dos vinhos recebem nota 5 ou 6, concentrados no centro da escala.</div></div>
+          <div class="ta"><div class="k gold">159</div><div class="t">vinhos com nota 7 ou mais, o grupo que o modelo precisa identificar.</div></div>
+          <div class="ta"><div class="k red">39</div><div class="t">vinhos com nota 4 ou menos, os piores avaliados de toda a base.</div></div>
+        </div>
+      </div>
+      <p class="note animate-child">Nenhum vinho recebeu nota 9 ou 10. A escala real vai de 3 a 8, com forte concentração no meio — <b>o desafio não é separar excelente de péssimo, é separar bom de mediano</b>.</p>
+    </div>
+    <div class="pagenum">4 / 12</div>
+  </section>
+
+  <!-- 5. DESBALANCEAMENTO -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">04</div><span class="tag">Análise Exploratória</span></div>
+    <h2 class="animate-child">O principal desafio: vinhos premium são raros</h2>
+    <div class="content">
+      <div class="split even">
+        <div class="chart-wrap animate-child">
+          <div class="ctitle">Proporção das Classes Após a Binarização</div>
+          <svg id="chartImbalance" viewBox="0 0 560 430" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="takeaways animate-child">
+          <div class="ta"><div class="k ink">86,1%</div><div class="t">baixa ou média qualidade: 984 das 1.143 amostras.</div></div>
+          <div class="ta"><div class="k gold">13,9%</div><div class="t">alta qualidade: apenas 159 amostras, 1 a cada 7 vinhos.</div></div>
+        </div>
+      </div>
+      <p class="note animate-child">Esse desequilíbrio muda tudo na avaliação: <b>acurácia sozinha engana</b>. Por isso o projeto usou também F1, ROC-AUC e PR-AUC, que medem especificamente a capacidade de encontrar os vinhos bons.</p>
+    </div>
+    <div class="pagenum">5 / 12</div>
+  </section>
+
+  <!-- 6. CORRELAÇÕES -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">05</div><span class="tag">O que determina a qualidade</span></div>
+    <h2 class="animate-child">Quatro variáveis explicam a maior parte da nota</h2>
+    <div class="content">
+      <div class="split">
+        <div class="chart-wrap animate-child">
+          <div class="ctitle">Correlação de Cada Variável com a Nota de Qualidade</div>
+          <svg id="chartCorr" viewBox="0 0 760 430" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="takeaways animate-child">
+          <div class="ta"><div class="k green">+0,48</div><div class="t">álcool: a correlação positiva mais forte de toda a base.</div></div>
+          <div class="ta"><div class="k red">−0,41</div><div class="t">acidez volátil: em excesso, dá gosto e cheiro de vinagre.</div></div>
+          <div class="ta"><div class="k gold">+0,26</div><div class="t">sulfatos e ácido cítrico (+0,24): conservação e frescor.</div></div>
+        </div>
+      </div>
+      <p class="note animate-child">Duas variáveis puxam em direções opostas: <b>álcool eleva a percepção de qualidade, acidez volátil derruba</b>. Densidade e dióxido de enxofre total aparecem com efeito negativo mais discreto.</p>
+      <div class="animate-child" style="display:flex;gap:0;margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--line);">
+        <div style="background:var(--green);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;">
+          <div style="text-align:center;">
+            <div style="font-size:22px;font-weight:800;line-height:1;">1%</div>
+            <div style="font-size:10px;margin-top:3px;opacity:.9;">abaixo de 9,5%</div>
+          </div>
+          <div style="font-size:24px;font-weight:200;">&#8594;</div>
+          <div style="text-align:center;">
+            <div style="font-size:22px;font-weight:800;line-height:1;">46%</div>
+            <div style="font-size:10px;margin-top:3px;opacity:.9;">acima de 11,5%</div>
+          </div>
+        </div>
+        <div style="background:var(--panel);padding:12px 18px;display:flex;align-items:center;">
+          <span style="font-size:13px;color:var(--body);line-height:1.55;">De cada 100 vinhos com álcool abaixo de 9,5%, <b>apenas 1 é premium</b>. Com álcool acima de 11,5%, <b>quase 1 a cada 2 é premium</b>. Teor alcoólico mais alto reflete uvas mais maduras — é o que o especialista percebe na taça.</span>
+        </div>
+      </div>
+    </div>
+    <div class="pagenum">6 / 12</div>
+  </section>
+
+  <!-- METODOLOGIA -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">06</div><span class="tag">Metodologia</span></div>
+    <h2 class="animate-child">Como os modelos foram construídos e validados</h2>
+    <div class="content" style="margin-top:16px;">
+      <div style="display:flex;flex-direction:column;gap:0;flex:1;" class="animate-child">
+
+        <div style="display:flex;gap:0;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">1</div>
+            <div style="width:2px;flex:1;background:var(--line);margin:4px 0;"></div>
+          </div>
+          <div style="padding:0 0 20px 14px;">
+            <div style="font-weight:700;color:var(--ink);font-size:14.5px;">Análise Exploratória (EDA)</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;">Distribuição das variáveis, correlações com qualidade e impacto do desbalanceamento 86/14.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">2</div>
+            <div style="width:2px;flex:1;background:var(--line);margin:4px 0;"></div>
+          </div>
+          <div style="padding:0 0 20px 14px;">
+            <div style="font-weight:700;color:var(--ink);font-size:14.5px;">Pré-processamento</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;">Tratamento de outliers, criação da coluna <b style="color:var(--body);">QualityBinary</b> (nota ≥ 7 = alta qualidade) e divisão estratificada 80% treino / 20% teste.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">3</div>
+            <div style="width:2px;flex:1;background:var(--line);margin:4px 0;"></div>
+          </div>
+          <div style="padding:0 0 20px 14px;">
+            <div style="font-weight:700;color:var(--ink);font-size:14.5px;">Modelagem</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;">Três algoritmos com abordagens distintas: <b style="color:var(--body);">KNN</b> (distância entre amostras), <b style="color:var(--body);">Random Forest</b> (combinação de árvores) e <b style="color:var(--body);">XGBoost</b> (aprendizado por correção de erros).</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">4</div>
+            <div style="width:2px;flex:1;background:var(--line);margin:4px 0;"></div>
+          </div>
+          <div style="padding:0 0 20px 14px;">
+            <div style="font-weight:700;color:var(--ink);font-size:14.5px;">Grid Search com Validação Cruzada</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;">Busca sistemática pelos melhores parâmetros, testando cada modelo em <b style="color:var(--body);">5 recortes diferentes</b> da base — garantindo que o resultado não depende da sorte de um único corte.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">5</div>
+          </div>
+          <div style="padding:0 0 0 14px;">
+            <div style="font-weight:700;color:var(--ink);font-size:14.5px;">Avaliação no conjunto de teste</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;">229 vinhos separados desde o início, <b style="color:var(--body);">nunca vistos durante o treinamento</b>. Métricas: F1, ROC-AUC e PR-AUC, além da acurácia.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="pagenum">7 / 12</div>
+  </section>
+
+  <!-- 10. GRÁFICO COMPARATIVO -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">07</div><span class="tag">Resultados</span></div>
+    <h2 class="animate-child">Como os modelos se saíram nas quatro métricas principais</h2>
+    <div class="content">
+      <div class="chart-wrap animate-child">
+        <div class="ctitle">Acurácia, Precisão, Recall e F1 por Modelo — Conjunto de Teste (229 vinhos)</div>
+        <svg id="chartMetrics" viewBox="0 0 1060 470" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <p class="note animate-child">A <b>acurácia</b> aproxima os três modelos (88-89%) — por isso ela sozinha engana. A <b>precisão</b> mostra quem acerta ao apontar um vinho bom: RF lidera com 63%. O <b>recall</b> mostra quem encontra mais vinhos bons: XGBoost e KNN chegam a 62,5%. O <b>F1</b> equilibra os dois — aqui os três ficam próximos, entre 0,57 e 0,60.</p>
+    </div>
+    <div class="pagenum">8 / 12</div>
+  </section>
+
+  <!-- 11. MATRIZES DE CONFUSÃO -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">08</div><span class="tag">Resultados</span></div>
+    <h2 class="animate-child">Onde cada modelo erra, em vinhos reais</h2>
+    <div class="content">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-content:start;max-height:420px;" class="animate-child">
+
+        <!-- RF -->
+        <div style="background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden;">
+          <div style="background:var(--wine);color:#fff;padding:11px 16px;font-size:14px;font-weight:700;text-align:center;letter-spacing:.3px;">Random Forest</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);">
+            <div style="background:#fff;padding:18px 12px;text-align:center;">
+              <div style="font-size:32px;font-weight:800;color:#1a3a6b;line-height:1;">187</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns classificados certo</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-left:3px solid #e8b84b;">
+              <div style="font-size:32px;font-weight:800;color:#b07a10;line-height:1;">10</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns marcados como premium</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #e07070;">
+              <div style="font-size:32px;font-weight:800;color:#b03030;line-height:1;">15</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium que escaparam</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #5db88a;">
+              <div style="font-size:32px;font-weight:800;color:#1f9d55;line-height:1;">17</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium encontrados</div>
+            </div>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line);">Erra menos ao <b style="color:var(--body);">promover</b> comuns, mas deixa escapar quase metade dos bons.</div>
+        </div>
+
+        <!-- XGBoost -->
+        <div style="background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden;">
+          <div style="background:#b07a10;color:#fff;padding:11px 16px;font-size:14px;font-weight:700;text-align:center;letter-spacing:.3px;">XGBoost</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);">
+            <div style="background:#fff;padding:18px 12px;text-align:center;">
+              <div style="font-size:32px;font-weight:800;color:#1a3a6b;line-height:1;">182</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns classificados certo</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-left:3px solid #e8b84b;">
+              <div style="font-size:32px;font-weight:800;color:#b07a10;line-height:1;">15</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns marcados como premium</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #e07070;">
+              <div style="font-size:32px;font-weight:800;color:#b03030;line-height:1;">12</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium que escaparam</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #5db88a;">
+              <div style="font-size:32px;font-weight:800;color:#1f9d55;line-height:1;">20</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium encontrados</div>
+            </div>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line);">Encontra <b style="color:var(--body);">mais vinhos bons</b>, mas promove mais comuns por engano.</div>
+        </div>
+
+        <!-- KNN -->
+        <div style="background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden;opacity:.85;">
+          <div style="background:var(--ink-2);color:#fff;padding:11px 16px;font-size:14px;font-weight:700;text-align:center;letter-spacing:.3px;">KNN</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);">
+            <div style="background:#fff;padding:18px 12px;text-align:center;">
+              <div style="font-size:32px;font-weight:800;color:#1a3a6b;line-height:1;">182</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns classificados certo</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-left:3px solid #e8b84b;">
+              <div style="font-size:32px;font-weight:800;color:#b07a10;line-height:1;">15</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">comuns marcados como premium</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #e07070;">
+              <div style="font-size:32px;font-weight:800;color:#b03030;line-height:1;">12</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium que escaparam</div>
+            </div>
+            <div style="background:#fff;padding:18px 12px;text-align:center;border-top:1px solid var(--line);border-left:3px solid #5db88a;">
+              <div style="font-size:32px;font-weight:800;color:#1f9d55;line-height:1;">20</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4;">premium encontrados</div>
+            </div>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line);">Resultado próximo ao XGBoost, mas <b style="color:var(--body);">menos confiável</b> ao ordenar probabilidades.</div>
+        </div>
+
+      </div>
+      <p class="note animate-child" style="margin-top:14px;">Nenhum modelo minimiza os dois erros ao mesmo tempo. <b>A escolha depende de qual erro custa mais caro</b>: prometer qualidade que não existe, ou deixar um bom vinho passar despercebido.</p>
+    </div>
+    <div class="pagenum">9 / 12</div>
+  </section>
+
+
+  <!-- 12. ESCOLHA DO MODELO -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">09</div><span class="tag">Decisão</span></div>
+    <h2 class="animate-child">O modelo escolhido: Random Forest</h2>
+    <div class="content">
+
+      <div style="background:var(--panel);border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:4px;" class="animate-child">
+        <div style="background:var(--wine);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="color:#fff;font-size:22px;font-weight:800;">Random Forest</div>
+            <div style="color:rgba(255,255,255,.7);font-size:12px;margin-top:3px;">Modelo principal do grupo</div>
+          </div>
+          <div style="background:#fff;color:var(--wine);font-size:11px;font-weight:800;letter-spacing:.5px;padding:5px 14px;border-radius:4px;">MODELO ESCOLHIDO</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);">
+          <div style="background:#fff;padding:20px 18px;text-align:center;">
+            <div style="font-size:28px;font-weight:800;color:var(--wine);">89,1%</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Acurácia</div>
+            <div style="font-size:12px;color:var(--body);margin-top:6px;line-height:1.4;">melhor acurácia geral entre os três modelos</div>
+          </div>
+          <div style="background:#fff;padding:20px 18px;text-align:center;">
+            <div style="font-size:28px;font-weight:800;color:var(--wine);">63%</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Precisão</div>
+            <div style="font-size:12px;color:var(--body);margin-top:6px;line-height:1.4;">quando aponta premium, acerta mais que os outros dois</div>
+          </div>
+          <div style="background:#fff;padding:20px 18px;text-align:center;">
+            <div style="font-size:28px;font-weight:800;color:var(--wine);">0,576</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">F1</div>
+            <div style="font-size:12px;color:var(--body);margin-top:6px;line-height:1.4;">melhor equilíbrio entre precisão e recall</div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;background:#fff;border-top:1px solid var(--line);">
+          <div style="font-size:13.5px;color:var(--body);line-height:1.6;">O Random Forest é o modelo mais confiável quando o custo de prometer qualidade que o vinho não tem é alto — como em seleção para <b>rótulo premium</b>, <b>exportação</b> ou <b>concurso</b>. Erra menos ao promover vinhos comuns como bons.</div>
+        </div>
+      </div>
+
+      <p class="note animate-child" style="margin-top:14px;">O XGBoost é uma alternativa válida quando encontrar mais vinhos bons é prioritário (recall 62,5% contra 53% do RF) — por exemplo, em triagem de linha de produção antes da degustação humana.</p>
+    </div>
+    <div class="pagenum">10 / 12</div>
+  </section>
+
+  <!-- 13. IMPLICAÇÕES -->
+  <section class="slide light">
+    <div class="topbar animate-child"><div class="idx">10</div><span class="tag">Implicações para a Produção</span></div>
+    <h2 class="animate-child">O que isso muda na prática</h2>
+    <div class="content">
+      <div class="rcards animate-child">
+        <div class="rcard c1">
+          <div class="rc-head"><div class="rc-n">1</div><div class="rc-title">Controlar acidez volátil</div></div>
+          <div class="rc-risk">É o fator negativo mais forte da base (−0,41). Em níveis altos, gera aroma e sabor de vinagre que derrubam a nota.</div>
+          <div class="rc-action"><div class="lbl">Ação</div><div class="txt">Monitorar durante a fermentação e maturação, tratando desvios antes do engarrafamento.</div></div>
+        </div>
+        <div class="rcard c2">
+          <div class="rc-head"><div class="rc-n">2</div><div class="rc-title">Acompanhar teor alcoólico</div></div>
+          <div class="rc-risk">Vinhos acima de 11,5% têm 46% de chance de serem premium, contra 1% abaixo de 9,5%.</div>
+          <div class="rc-action"><div class="lbl">Ação</div><div class="txt">Usar como indicador de maturação da uva na colheita, não como parâmetro a ser corrigido depois.</div></div>
+        </div>
+        <div class="rcard c3">
+          <div class="rc-head"><div class="rc-n">3</div><div class="rc-title">Triagem automatizada</div></div>
+          <div class="rc-risk">Hoje toda amostra depende de painel humano, com custo e tempo proporcionais ao volume.</div>
+          <div class="rc-action"><div class="lbl">Ação</div><div class="txt">Priorizar para degustação os lotes que o modelo aponta como promissores, reduzindo o volume analisado.</div></div>
+        </div>
+        <div class="rcard c4">
+          <div class="rc-head"><div class="rc-n">4</div><div class="rc-title">Reconhecer os limites</div></div>
+          <div class="rc-risk">A base cobre apenas vinho tinto de uma região, e a nota do especialista é tratada como verdade absoluta.</div>
+          <div class="rc-action"><div class="lbl">Ação</div><div class="txt">Usar como apoio à decisão, não como substituto do enólogo. Ampliar a base antes de escalar.</div></div>
+        </div>
+      </div>
+    </div>
+    <<<div class="pagenum">11 / 12</div> </section>
+
+  <!-- 14. FECHAMENTO -->
+  <section class="slide dark">
+    <p class="kicker animate-child">Considerações Finais</p>
+    <h1 class="animate-child" style="font-size:38px;max-width:920px;">Os dados de produção preveem qualidade. Mas a decisão final ainda é humana.</h1>
+    <p class="subtitle animate-child">O Random Forest acerta 9 em cada 10 comparações entre um vinho bom e um comum, e é 5 vezes mais eficiente que o acaso para encontrar vinhos premium. Uma ferramenta real de triagem e priorização — que reduz custo, acelera o processo e entrega mais objetividade a quem toma a decisão final.</p>
+    <<div class="pagenum">12 / 12</div>  </section>
+
+</div>
+
+<div id="nav">
+  <button id="prev">◀ Anterior</button>
+  <span id="counter">1 / 14</span>
+  <button id="next">Próximo ▶</button>
+</div>
+
+<script>
+const C={ink:'#2a1520',ink2:'#4a2436',wine:'#8b1a3a',wineS:'#c2647f',gold:'#c08a1e',goldS:'#e0b64b',
+  green:'#1f9d55',red:'#cf3b3b',line:'#e4d7dc',muted:'#8a7680',
+  m1:'#8b1a3a',m2:'#c08a1e',m3:'#4a2436',m4:'#c2647f'};
+const SVGNS='http://www.w3.org/2000/svg';
+const tip=document.getElementById('tip');
+function el(n,a){const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function showTip(html,evt){tip.innerHTML=html;tip.style.opacity=1;moveTip(evt);}
+function moveTip(evt){tip.style.left=(evt.clientX+14)+'px';tip.style.top=(evt.clientY-10)+'px';}
+function hideTip(){tip.style.opacity=0;}
+function attach(node,html){
+  node.addEventListener('mousemove',e=>showTip(html,e));
+  node.addEventListener('mouseenter',e=>showTip(html,e));
+  node.addEventListener('mouseleave',hideTip);
+}
+
+// ---------- barras verticais genéricas ----------
+function drawVBar(id,data,opt){
+  const svg=document.getElementById(id);
+  const W=opt.W||720,H=opt.H||430,mL=opt.mL||84,mR=20,mT=24,mB=opt.mB||54;
+  const pw=W-mL-mR,ph=H-mT-mB;
+  const maxV=opt.maxV,ticks=opt.ticks||5;
+  const fmt=opt.fmt||(v=>v), axisFmt=opt.axisFmt||fmt;
+  const bw=pw/data.length*0.62;
+  const cx=i=>mL+pw*(i/data.length)+pw/data.length*0.5;
+  const y=v=>mT+ph-(v/maxV)*ph;
+  for(let g=0;g<=ticks;g++){const v=maxV*g/ticks,yy=y(v);
+    svg.appendChild(el('line',{x1:mL,y1:yy,x2:mL+pw,y2:yy,class:'grid-line'}));
+    const t=el('text',{x:mL-8,y:yy+4,'text-anchor':'end',class:'axis-text'});
+    t.textContent=axisFmt(v);svg.appendChild(t);
+  }
+  if(opt.yTitle){const at=el('text',{x:20,y:mT+ph/2,'text-anchor':'middle',class:'axis-title',
+    transform:`rotate(-90 20 ${mT+ph/2})`});at.textContent=opt.yTitle;svg.appendChild(at);}
+  data.forEach((d,i)=>{
+    const yy=y(d.v),hh=mT+ph-yy;
+    const r=el('rect',{x:cx(i)-bw/2,y:yy,width:bw,height:Math.max(hh,1),fill:d.c||C.wine,class:'bar',rx:3});
+    attach(r,`<b>${d.l}</b><br>${opt.tipLabel||''}${fmt(d.v)}${d.tip?'<br>'+d.tip:''}`);
+    svg.appendChild(r);
+    const vt=el('text',{x:cx(i),y:yy-7,'text-anchor':'middle',class:'bar-val'});
+    vt.textContent=d.t||fmt(d.v);svg.appendChild(vt);
+    // rótulo x (quebra em 2 linhas se opt.wrap)
+    const words=String(d.l).split(' ');
+    if(opt.wrap&&words.length>1){
+      const half=Math.ceil(words.length/2);
+      const l1=el('text',{x:cx(i),y:mT+ph+17,'text-anchor':'middle',class:'axis-text'});
+      l1.textContent=words.slice(0,half).join(' ');svg.appendChild(l1);
+      const l2=el('text',{x:cx(i),y:mT+ph+31,'text-anchor':'middle',class:'axis-text'});
+      l2.textContent=words.slice(half).join(' ');svg.appendChild(l2);
+    }else{
+      const lt=el('text',{x:cx(i),y:mT+ph+18,'text-anchor':'middle',class:'axis-text'});
+      lt.textContent=d.l;svg.appendChild(lt);
+    }
+  });
+  svg.appendChild(el('line',{x1:mL,y1:mT+ph,x2:mL+pw,y2:mT+ph,class:'axis-line'}));
+}
+
+// ---------- donut ----------
+function drawDonut(id,data,opt){
+  const svg=document.getElementById(id);
+  const W=560,H=430,cx=W*0.42,cy=H*0.48,rOut=132,rIn=74;
+  const total=data.reduce((s,d)=>s+d.v,0);
+  let ang=-Math.PI/2;
+  data.forEach(d=>{
+    const frac=d.v/total, a2=ang+frac*Math.PI*2;
+    const x1=cx+rOut*Math.cos(ang),y1=cy+rOut*Math.sin(ang);
+    const x2=cx+rOut*Math.cos(a2),y2=cy+rOut*Math.sin(a2);
+    const x3=cx+rIn*Math.cos(a2),y3=cy+rIn*Math.sin(a2);
+    const x4=cx+rIn*Math.cos(ang),y4=cy+rIn*Math.sin(ang);
+    const large=frac>0.5?1:0;
+    const p=el('path',{d:`M${x1},${y1} A${rOut},${rOut} 0 ${large},1 ${x2},${y2} L${x3},${y3} A${rIn},${rIn} 0 ${large},0 ${x4},${y4} Z`,
+      fill:d.c,class:'bar'});
+    attach(p,`<b>${d.l}</b><br>${d.v} amostras (${(frac*100).toFixed(1)}%)`);
+    svg.appendChild(p);
+    ang=a2;
+  });
+  // centro
+  const t1=el('text',{x:cx,y:cy-4,'text-anchor':'middle',fill:C.ink});
+  t1.setAttribute('font-size','30');t1.setAttribute('font-weight','800');t1.textContent='1.143';svg.appendChild(t1);
+  const t2=el('text',{x:cx,y:cy+18,'text-anchor':'middle',fill:C.muted});
+  t2.setAttribute('font-size','12.5');t2.textContent='amostras';svg.appendChild(t2);
+  // legenda
+  let ly=cy-52;
+  data.forEach(d=>{
+    svg.appendChild(el('rect',{x:W-176,y:ly-11,width:13,height:13,fill:d.c,rx:2}));
+    const t=el('text',{x:W-156,y:ly,class:'legend-text'});t.textContent=d.l;svg.appendChild(t);
+    const s=el('text',{x:W-156,y:ly+17,class:'axis-text'});
+    s.textContent=`${d.v} · ${(d.v/total*100).toFixed(1)}%`;svg.appendChild(s);
+    ly+=54;
+  });
+}
+
+// ---------- barras horizontais divergentes (correlação) ----------
+function drawDiverging(id,data,opt){
+  const svg=document.getElementById(id);
+  const W=760,H=430,mL=178,mR=48,mT=16,mB=44;
+  const pw=W-mL-mR,ph=H-mT-mB;
+  const maxA=0.55;
+  const zx=mL+pw*(maxA/(maxA*2));
+  const x=v=>zx+(v/maxA)*(pw/2);
+  const rowH=ph/data.length, bh=rowH*0.62;
+  // grid
+  for(let v=-0.4;v<=0.4001;v+=0.2){
+    const vv=Math.round(v*10)/10, xx=x(vv);
+    svg.appendChild(el('line',{x1:xx,y1:mT,x2:xx,y2:mT+ph,class:'grid-line'}));
+    const t=el('text',{x:xx,y:mT+ph+17,'text-anchor':'middle',class:'axis-text'});
+    t.textContent=(vv>0?'+':'')+vv.toFixed(1);svg.appendChild(t);
+  }
+  svg.appendChild(el('line',{x1:zx,y1:mT,x2:zx,y2:mT+ph,stroke:'#b9a3ac','stroke-width':1.5}));
+  data.forEach((d,i)=>{
+    const yy=mT+rowH*i+(rowH-bh)/2;
+    const x0=d.v>=0?zx:x(d.v), w=Math.abs(x(d.v)-zx);
+    const r=el('rect',{x:x0,y:yy,width:Math.max(w,1.5),height:bh,fill:d.c,class:'bar',rx:3});
+    attach(r,`<b>${d.l}</b><br>Correlação: ${(d.v>0?'+':'')}${d.v.toFixed(2)}`);
+    svg.appendChild(r);
+    const lt=el('text',{x:mL-12,y:yy+bh/2+4,'text-anchor':'end',class:'axis-text'});
+    lt.setAttribute('font-size','12');lt.setAttribute('fill',C.ink);lt.textContent=d.l;svg.appendChild(lt);
+    const vt=el('text',{x:d.v>=0?x(d.v)+7:x(d.v)-7,y:yy+bh/2+4,
+      'text-anchor':d.v>=0?'start':'end',class:'bar-val'});
+    vt.setAttribute('font-size','11.5');vt.textContent=(d.v>0?'+':'')+d.v.toFixed(2);svg.appendChild(vt);
+  });
+  const at=el('text',{x:mL+pw/2,y:H-10,'text-anchor':'middle',class:'axis-title'});
+  at.textContent='← reduz a qualidade          |          eleva a qualidade →';svg.appendChild(at);
+}
+
+// ---------- barras agrupadas (métricas) ----------
+function drawGrouped(id,groups,series,opt){
+  const svg=document.getElementById(id);
+  const W=1060,H=470,mL=70,mR=24,mT=26,mB=96;
+  const pw=W-mL-mR,ph=H-mT-mB;
+  const gw=pw/groups.length, bw=gw*0.78/series.length;
+  const y=v=>mT+ph-(v/1)*ph;
+  for(let g=0;g<=5;g++){const v=g/5,yy=y(v);
+    svg.appendChild(el('line',{x1:mL,y1:yy,x2:mL+pw,y2:yy,class:'grid-line'}));
+    const t=el('text',{x:mL-8,y:yy+4,'text-anchor':'end',class:'axis-text'});
+    t.textContent=v.toFixed(1);svg.appendChild(t);
+  }
+  groups.forEach((g,gi)=>{
+    const gx=mL+gw*gi+gw*0.11;
+    series.forEach((s,si)=>{
+      const v=s.vals[gi], yy=y(v), hh=mT+ph-yy;
+      const r=el('rect',{x:gx+bw*si,y:yy,width:bw*0.88,height:Math.max(hh,1),fill:s.c,class:'bar',rx:2.5});
+      attach(r,`<b>${s.name}</b><br>${g}: ${v.toFixed(3).replace('.',',')}`);
+      svg.appendChild(r);
+      if(v>0.03){
+        const vt=el('text',{x:gx+bw*si+bw*0.44,y:yy-5,'text-anchor':'middle',class:'bar-val'});
+        vt.setAttribute('font-size','9.5');vt.textContent=v.toFixed(2).replace('.',',');svg.appendChild(vt);
+      }
+    });
+    const lt=el('text',{x:mL+gw*gi+gw/2,y:mT+ph+20,'text-anchor':'middle',class:'axis-text'});
+    lt.setAttribute('font-size','12.5');lt.setAttribute('font-weight','700');
+    lt.setAttribute('fill',C.ink);lt.textContent=g;svg.appendChild(lt);
+  });
+  svg.appendChild(el('line',{x1:mL,y1:mT+ph,x2:mL+pw,y2:mT+ph,class:'axis-line'}));
+  // legenda
+  const lgY=H-30;let lx=mL+40;
+  series.forEach(s=>{
+    svg.appendChild(el('rect',{x:lx,y:lgY-11,width:14,height:14,fill:s.c,rx:2}));
+    const t=el('text',{x:lx+20,y:lgY,class:'legend-text'});t.textContent=s.name;svg.appendChild(t);
+    lx+=s.name.length*8.2+56;
+  });
+}
+
+// ---------- CV: barras com erro ----------
+
+function buildAll(){
+  if(document.getElementById('chartQuality').childNodes.length)return;
+
+  // Distribuição das notas (dados reais do dataset)
+  drawVBar('chartQuality',[
+    {l:'3',v:6,c:C.wineS,tip:'0,5% da base'},
+    {l:'4',v:33,c:C.wineS,tip:'2,9% da base'},
+    {l:'5',v:483,c:C.ink2,tip:'42,3% da base'},
+    {l:'6',v:462,c:C.ink2,tip:'40,4% da base'},
+    {l:'7',v:143,c:C.gold,tip:'12,5% da base · ALTA QUALIDADE'},
+    {l:'8',v:16,c:C.gold,tip:'1,4% da base · ALTA QUALIDADE'}
+  ],{maxV:560,ticks:4,yTitle:'Quantidade de Vinhos',
+     fmt:v=>Math.round(v),tipLabel:'Vinhos: '});
+
+  // Desbalanceamento
+  drawDonut('chartImbalance',[
+    {l:'Baixa / Média qualidade',v:984,c:C.ink2},
+    {l:'Alta qualidade',v:159,c:C.gold}
+  ],{});
+
+  // Correlações (dados reais: corr com quality)
+  drawDiverging('chartCorr',[
+    {l:'Álcool',v:0.49,c:C.green},
+    {l:'Sulfatos',v:0.26,c:C.green},
+    {l:'Ácido cítrico',v:0.24,c:C.green},
+    {l:'Acidez fixa',v:0.12,c:'#7fbf9a'},
+    {l:'Açúcar residual',v:0.02,c:'#c8d8cf'},
+    {l:'pH',v:-0.05,c:'#e8c2c2'},
+    {l:'Dióxido enxofre livre',v:-0.06,c:'#e8c2c2'},
+    {l:'Cloretos',v:-0.12,c:'#dda0a0'},
+    {l:'Densidade',v:-0.18,c:'#d18585'},
+    {l:'Dióxido enxofre total',v:-0.18,c:'#d18585'},
+    {l:'Acidez volátil',v:-0.41,c:C.red}
+  ],{});
+
+
+
+
+  // Métricas comparativas (números reais do notebook)
+  drawGrouped('chartMetrics',
+    ['Acurácia','Precisão','Recall','F1'],
+    [
+      {name:'Random Forest',c:C.m1,vals:[0.891,0.630,0.531,0.576]},
+      {name:'XGBoost',c:C.m2,vals:[0.882,0.571,0.625,0.597]},
+      {name:'KNN',c:C.m3,vals:[0.882,0.571,0.625,0.597]}
+    ],{});
+}
+
+// ---------- navegação ----------
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const progress=document.getElementById('progress');
+const counter=document.getElementById('counter');
+const nav=document.getElementById('nav');
+function show(i){
+  cur=Math.max(0,Math.min(i,slides.length-1));
+  slides.forEach((s,idx)=>s.classList.toggle('active',idx===cur));
+  progress.style.width=((cur+1)/slides.length*100)+'%';
+  counter.textContent=(cur+1)+' / '+slides.length;
+  nav.classList.toggle('dark-context',slides[cur].classList.contains('dark'));
+  hideTip();
+}
+document.getElementById('prev').onclick=()=>show(cur-1);
+document.getElementById('next').onclick=()=>show(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')show(cur+1);
+  if(e.key==='ArrowLeft')show(cur-1);
+});
+buildAll();
+show(0);
+</script>
+</body>
+</html>
